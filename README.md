@@ -52,6 +52,10 @@ slicer.slice_gpx_at_points(gpx_data)
 
 Detailed documentation of these functions can be found in the code.
 
+## Contributing
+
+Issue submissions and pull requests are welcome. Simple fixes do not require an issue to be submitted, however, do submit one if your pull request includes a lot of changes or new features.
+
 ## More info
 
 Read more about this package, including the motivation to write it [on my blog](https://hann.io/articles/2020/introducing-gpxslicer/).
