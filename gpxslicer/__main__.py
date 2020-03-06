@@ -29,7 +29,7 @@ def main():
     slice_group = parser.add_mutually_exclusive_group(required=True)
 
     slice_group.add_argument("-d", "--distance",
-                        dest="slice_distance", required=False, type=int, metavar="METERS",
+                        dest="slice_distance", required=False, nargs='+', metavar="METERS",
                         help="Slice the GPX track(s) at every METERS meters starting from the beginning")
     slice_group.add_argument("-e", "--external",
                         dest="slice_file", required=False,  metavar="EXT_WPTS_FILE", type=file_exists,
@@ -48,6 +48,10 @@ def main():
     parser.add_argument("-q", "--quietly",
                         dest="quietly", required=False, action='store_true',
                         help="Don't print diagnostic messages")
+
+    parser.add_argument("--extra-info",
+                        dest="extra_info", required=False, action='store_true',
+                        help="Print extra info about each segment")
 
 
     args = parser.parse_args()
@@ -68,9 +72,18 @@ def main():
 
     if not args.quietly:
         p = 0
+        if args.extra_info and len(result.tracks) > 0:
+            sys.stderr.write('Track,Segment,Length,Elevation Min, Elevation Max, Elevation Gain, Elevation Loss\n')
         for t in result.tracks:
-            for s in t.segments:
+            for idx, s in enumerate(t.segments, start=1):
                 p += len(s.points)
+
+                if args.extra_info:
+                    ele_min, ele_max = s.get_elevation_extremes();
+                    ele_gain, ele_loss = s.get_uphill_downhill();
+                    sys.stderr.write('{0},{1},{2:.0f},{3:.0f},{4:.0f},{5:.0f},{6:.0f}\n'.format(
+                            t.name,idx,s.length_3d(),ele_min, ele_max, ele_gain, ele_loss))
+
         sys.stderr.write('GPX result has {t} tracks with {p} points in total and {w} waypoints.\n'.format(
             t = len(result.tracks),
             p = p,
