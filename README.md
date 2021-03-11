@@ -21,11 +21,13 @@ Full description of command line options:
 | -h | --help | Show the help. |
 | -i | --input | Specify the input GPX file with tracks to be sliced.  If not given, input is read from stdin. |
 | -o | --output | Specify the output GPX file. If not given,  input is written to stdout. |
-| -d | --distance | Slice tracks at every DISTANCE meters. |
+| -d | --distance | Slice tracks at every DISTANCE or LIST OF DISTANCE meters. |
 | -e | --external | Slice tracks at waypoints found in EXTERNAL file. |
 | -w | --waypoints | Slice tracks at waypoints found in INPUT. |
 |  | --no-tracks | Do not store sliced tracks in the output. Useful when slicing using `-d` and only the cut points are of interest. |
 |  | --no-waypoints | Do not store cut points in the output. Useful when slicing using `-e` or `-w` so the points are already (approximately) known. |
+|  | --extra-info | Output data about each slice: Length, Elevation min/max, Elevation gain/loss |
+|  | --dist3d | Enable 3D distance calculations (2D is used by default) |
 | -q | --quietly | Do not display status messages (that are normally sent to stderr). |
 
 #### Slicing at intervals
