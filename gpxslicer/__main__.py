@@ -53,6 +53,10 @@ def main():
                         dest="extra_info", required=False, action='store_true',
                         help="Print extra info about each segment")
 
+    parser.add_argument("--dist3d",
+                        dest="dist3d", required=False, action='store_true',
+                        help="Calculate distance in 3 dimensions")
+
 
     args = parser.parse_args()
 
@@ -64,7 +68,7 @@ def main():
     sourcedata = slicer.parse_gpx(input_data)
 
     if args.slice_distance:
-        result = slicer.slice_gpx_at_interval(sourcedata, args.slice_distance)
+        result = slicer.slice_gpx_at_interval(sourcedata, args.slice_distance, args.dist3d)
     elif args.slice_file:
         result = slicer.slice_gpx_at_points(sourcedata, slicer.load_gpx(args.slice_file))
     elif args.slice_waypoints:
