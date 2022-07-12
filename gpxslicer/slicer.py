@@ -18,7 +18,7 @@ def slice_gpx_at_points(source_gpx, other_gpx=None):
 
     if not other_gpx:
         other_gpx = source_gpx.clone()
-    
+
     out_gpx = gpxpy.gpx.GPX()
 
     # GPX.split() is done in place, so we'll copy the source not to modify it
@@ -59,7 +59,7 @@ def slice_gpx_at_points(source_gpx, other_gpx=None):
     tracker = 0
     for track in temp_gpx.tracks:
         for segment in track.segments:
-            out_track = gpxpy.gpx.GPXTrack(name = 'track{}'.format(tracker))
+            out_track = gpxpy.gpx.GPXTrack(name = 'track{:02d}'.format(tracker))
             tracker += 1
             out_track.segments.append(segment)
             out_gpx.tracks.append(out_track)
@@ -81,10 +81,11 @@ def slice_gpx_at_interval(source_gpx, slice_interval, dist3d=True):
         and all identified cut points as waypoints
     """
     out_gpx = gpxpy.gpx.GPX()
+    interval_idx = 0
 
     tracker = 0
     for track in source_gpx.tracks:
-        out_track = gpxpy.gpx.GPXTrack(name = 'track{}'.format(tracker))
+        out_track = gpxpy.gpx.GPXTrack(name = 'track{:02d}'.format(tracker))
         tracker += 1
         for segment in track.segments:
             out_segment = gpxpy.gpx.GPXTrackSegment()
@@ -113,24 +114,28 @@ def slice_gpx_at_interval(source_gpx, slice_interval, dist3d=True):
                 out_segment.points.append(point)
 
                 # when we pass the slice interval:
-                if distance_since_slice > int(slice_interval):
-                    distance_since_slice = 0
+                if interval_idx < len(slice_interval):
+                    if distance_since_slice > int(slice_interval[interval_idx]):
+                        distance_since_slice = 0
 
-                    # store the point as a waypoint
-                    out_gpx.waypoints.append(gpxpy.gpx.GPXWaypoint(latitude = point.latitude,
-                                                                    longitude = point.longitude,
-                                                                    elevation = point.elevation))
+                        # store the point as a waypoint
+                        out_gpx.waypoints.append(gpxpy.gpx.GPXWaypoint(latitude = point.latitude,
+                                                                       longitude = point.longitude,
+                                                                       elevation = point.elevation))
                     
-                    # if we arrive at a slice point, finish the currently
-                    # running segment AND track and initialize a clean one
-                    # for each, add the current point to the new segment 
-                    # to ensure continuity
-                    out_track.segments.append(out_segment)
-                    out_gpx.tracks.append(out_track)
-                    out_track = gpxpy.gpx.GPXTrack(name = 'track{}'.format(tracker))
-                    tracker += 1
-                    out_segment = gpxpy.gpx.GPXTrackSegment()
-                    out_segment.points.append(point)
+                        # if we arrive at a slice point, finish the currently
+                        # running segment AND track and initialize a clean one
+                        # for each, add the current point to the new segment 
+                        # to ensure continuity
+                        out_track.segments.append(out_segment)
+                        out_gpx.tracks.append(out_track)
+                        out_track = gpxpy.gpx.GPXTrack(name = 'track{:02d}'.format(tracker))
+                        tracker += 1
+                        out_segment = gpxpy.gpx.GPXTrackSegment()
+                        out_segment.points.append(point)
+
+                        if len(slice_interval) > 1: # multiple distances slices
+                            interval_idx += 1
 
                 previous_point = point
             out_track.segments.append(out_segment)
