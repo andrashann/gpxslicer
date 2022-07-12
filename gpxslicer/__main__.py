@@ -4,7 +4,7 @@ import sys
 
 import gpxslicer
 from gpxslicer import slicer
-from gpxpy import geo
+from gpxpy import gpx, geo
 import math
 
 def file_exists(x):
@@ -29,6 +29,7 @@ def calc_gradients(seg, gradient_len, gradient_pc, dist3d):
 
     gain = 0
     loss = 0
+    notes = ""
 
     current = []
     is_climbing = False
@@ -46,18 +47,30 @@ def calc_gradients(seg, gradient_len, gradient_pc, dist3d):
                 current.append(point)
             else:
                 dist = current[0].distance_3d(current[-1]) if dist3d else current[0].distance_2d(current[-1])
-                elev_radians = geo.elevation_angle(current[0], current[-1], True)
+
+                # Calculate the average gradient over the distance
+                elev_radians = 0.0
+                for i in range(len(current)-1):
+                    elev_radians += geo.elevation_angle(current[i], current[i+1], True)
+                elev_radians /= len(current);
+
                 elev_pc = math.tan(abs(elev_radians)) * 100
                 if dist >= gradient_len and elev_pc >= gradient_pc:
-#                    sys.stdout.write('Processing a segment of {:.2f} metres in length, with an angle of {:.4f}°, {:.2f}%.\n'.format(dist, math.degrees(elev_radians), elev_pc))
+
+                    if not notes:
+                        notes += 'Start Lat, Start Long, End Lat, End Long, Length, Angle, Grade, Gain, Loss\n'
+
                     elevations = [point.elevation for point in current]
                     slope_gain, slope_loss = geo.calculate_uphill_downhill(elevations)
                     gain += slope_gain
                     loss += slope_loss
 
+                    notes += '{},{},{},{},{:.2f},{:.4f},{:.2f},{:.2f},{:.2f}\n'.format(current[0].latitude, current[0].longitude,
+                        current[-1].latitude, current[-1].longitude, dist, math.degrees(elev_radians), elev_pc, slope_gain, slope_loss)
+
                 current = [point]
 
-    return gain, loss
+    return gain, loss, notes
 
 
 def main():
@@ -135,9 +148,13 @@ def main():
 
                 if args.extra_info:
                     ele_min, ele_max = s.get_elevation_extremes();
-                    ele_gain, ele_loss = calc_gradients(s, args.min_grad_len, args.min_grad_pc, args.dist3d);
+                    ele_gain, ele_loss, notes = calc_gradients(s, args.min_grad_len, args.min_grad_pc, args.dist3d);
                     sys.stderr.write('{0},{1},{2:.0f},{3:.0f},{4:.0f},{5:.0f},{6:.0f}\n'.format(
-                            t.name,idx,s.length_3d(),ele_min, ele_max, ele_gain, ele_loss))
+                            t.name,idx,s.length_3d() if args.dist3d else s.length_2d(),ele_min, ele_max, ele_gain, ele_loss))
+
+                    if notes:
+                        with open(t.name + '_notes.txt', 'w') as f:
+                            f.write(notes);
 
         sys.stderr.write('GPX result has {t} tracks with {p} points in total and {w} waypoints.\n'.format(
             t = len(result.tracks),

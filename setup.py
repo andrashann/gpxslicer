@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="gpxslicer",
-    version="0.1.0",
+    version="0.1.3",
     description="Slice up gpx tracks based on distance from the start or custom waypoints",
     long_description=README,
     long_description_content_type="text/markdown",
