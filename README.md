@@ -28,6 +28,8 @@ Full description of command line options:
 |  | --no-waypoints | Do not store cut points in the output. Useful when slicing using `-e` or `-w` so the points are already (approximately) known. |
 |  | --extra-info | Output data about each slice: Length, Elevation min/max, Elevation gain/loss |
 |  | --dist3d | Enable 3D distance calculations (2D is used by default) |
+|  | --min-grad-len | (m) Only calculate the elevation gain/loss on sections longer than value |
+|  | --min-grad-pc | (%) Only calculate the elevation gain/loss on sections steeper than value |
 | -q | --quietly | Do not display status messages (that are normally sent to stderr). |
 
 #### Slicing at intervals

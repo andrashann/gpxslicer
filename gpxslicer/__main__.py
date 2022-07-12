@@ -4,6 +4,8 @@ import sys
 
 import gpxslicer
 from gpxslicer import slicer
+from gpxpy import geo
+import math
 
 def file_exists(x):
         """
@@ -15,6 +17,48 @@ def file_exists(x):
             # error: argument input: x does not exist
             raise argparse.ArgumentTypeError("input file {0} does not exist".format(x))
         return x
+
+def calc_gradients(seg, gradient_len, gradient_pc, dist3d):
+
+    # No threshold data, return the old calculation
+    if gradient_len is None or gradient_pc is None:
+        return seg.get_uphill_downhill()
+
+    if not seg.points:
+        return 0,0
+
+    gain = 0
+    loss = 0
+
+    current = []
+    is_climbing = False
+
+    for point in seg.points:
+        if not current:
+            current.append(point)
+        elif 1 == len(current):
+            is_climbing = (current[-1].elevation < point.elevation)
+            current.append(point)
+        else:
+            if is_climbing and (current[-1].elevation < point.elevation):
+                current.append(point)
+            elif not is_climbing and (current[-1].elevation > point.elevation):
+                current.append(point)
+            else:
+                dist = current[0].distance_3d(current[-1]) if dist3d else current[0].distance_2d(current[-1])
+                elev_radians = geo.elevation_angle(current[0], current[-1], True)
+                elev_pc = math.tan(abs(elev_radians)) * 100
+                if dist >= gradient_len and elev_pc >= gradient_pc:
+#                    sys.stdout.write('Processing a segment of {:.2f} metres in length, with an angle of {:.4f}°, {:.2f}%.\n'.format(dist, math.degrees(elev_radians), elev_pc))
+                    elevations = [point.elevation for point in current]
+                    slope_gain, slope_loss = geo.calculate_uphill_downhill(elevations)
+                    gain += slope_gain
+                    loss += slope_loss
+
+                current = [point]
+
+    return gain, loss
+
 
 def main():
     parser = argparse.ArgumentParser(description='Slice GPX tracks at given intervals or near provided points.')
@@ -57,6 +101,13 @@ def main():
                         dest="dist3d", required=False, action='store_true',
                         help="Calculate distance in 3 dimensions")
 
+    parser.add_argument("--min-grad-len", type=float,
+                        dest="min_grad_len", required=False,
+                        help="Minumum gradient length threshold (m)")
+
+    parser.add_argument("--min-grad-pc", type=float,
+                        dest="min_grad_pc", required=False,
+                        help="Minumum gradient percent threshold (%)")
 
     args = parser.parse_args()
 
@@ -84,7 +135,7 @@ def main():
 
                 if args.extra_info:
                     ele_min, ele_max = s.get_elevation_extremes();
-                    ele_gain, ele_loss = s.get_uphill_downhill();
+                    ele_gain, ele_loss = calc_gradients(s, args.min_grad_len, args.min_grad_pc, args.dist3d);
                     sys.stderr.write('{0},{1},{2:.0f},{3:.0f},{4:.0f},{5:.0f},{6:.0f}\n'.format(
                             t.name,idx,s.length_3d(),ele_min, ele_max, ele_gain, ele_loss))
 
